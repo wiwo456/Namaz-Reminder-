@@ -1,0 +1,1 @@
+print("This is a namaz and ftar time reminding bot.")
