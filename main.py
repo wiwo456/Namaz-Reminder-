@@ -4,14 +4,17 @@ import time
 from datetime import datetime
 from datetime import timedelta
 from prayertimes import prayer_times
+from notifier import send_notification
 
 
 with open ("config.json", "r") as f:
     config = json.load(f)
     lat = config["lat"]
     lon = config ["lon"]
+    user_key = config["user_key"]
+    api_key = config["api_key"]
 
-print("This is a namaz and ftar time reminding bot.") 
+send_notification("Namaz reminder is now active...")
 print(prayer_times)
 
 ramadan_end = datetime(2026, 3, 19).date()
@@ -30,10 +33,11 @@ while True:
         iftar_warning_str = iftar_warning.strftime("%I:%M %p")
 
         if current_time == iftar_warning_str:
-            print("Iftar is 5 minutes...")
-
+            send_notification("🕌 Iftar is 5 minutes...")
+    
     for prayer_name, prayer_time in prayer_times.items():
         if current_time == prayer_time:
-            print(f"it is time for {prayer_name}")
-
+            send_notification(f"🕌 It is time for {prayer_name}")
     time.sleep(60)
+
+last
