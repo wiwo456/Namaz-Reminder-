@@ -1,7 +1,14 @@
-prayer_times ={
-    "fajr" : "05:21 AM",
-    "duhr" : "12:09 PM",
-    "asar" : "03:14 PM",
-    "maghribh" : "05:43 PM",
-    "isha" : "06:58 PM"
-}
+import requests
+import json 
+from datetime import datetime 
+
+with open("config.json","r") as f:
+    config = json.load(f)
+    lat = config["lat"]
+    lon = config["lon"]
+
+url = f"http://api.aladhan.com/v1/timings?latitude={lat}&longitude={lon}&method=2"
+
+response = requests.get(url)
+data = response.json()
+

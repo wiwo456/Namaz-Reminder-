@@ -49,10 +49,10 @@ while True:
     print(f"the date is {today} and hour is {current_time}")
 
 
-    # Iftar reminder
+
     if today <= ramadan_end:
 
-        maghribh_str = prayer_times["maghribh"]
+        maghribh_str = prayer_times["maghrib"]
 
         maghribh_conv = datetime.strptime(maghribh_str, "%I:%M %p")
 
@@ -63,8 +63,6 @@ while True:
         if current_time == iftar_warning_str:
             send_notification("🌙 Iftar is in 5 minutes")
 
-
-    # Prayer reminders
     for prayer_name, prayer_time in prayer_times.items():
 
         if current_time == prayer_time and prayer_name not in storage["prayers_sent"]:
