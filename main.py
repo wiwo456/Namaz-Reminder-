@@ -52,11 +52,11 @@ while True:
 
     if today <= ramadan_end:
 
-        maghribh_str = prayer_times["maghrib"]
+        maghrib_str = prayer_times["maghrib"]
 
-        maghribh_conv = datetime.strptime(maghribh_str, "%I:%M %p")
+        maghrib_conv = datetime.strptime(maghrib_str, "%I:%M %p")
 
-        iftar_warning = maghribh_conv - timedelta(minutes=5)
+        iftar_warning = maghrib_conv - timedelta(minutes=5)
 
         iftar_warning_str = iftar_warning.strftime("%I:%M %p")
 
