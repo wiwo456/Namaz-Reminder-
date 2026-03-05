@@ -3,7 +3,7 @@ import json
 import time
 from datetime import datetime
 from datetime import timedelta
-from prayertimes import prayer_times
+from prayertimes import get_prayer_times 
 from notifier import send_notification
 
 
@@ -24,9 +24,11 @@ with open("config.json", "r") as f:
 # Start notification
 send_notification("Namaz reminder is now active...")
 
+prayer_times = get_prayer_times()
 
-print(prayer_times)
-
+if not prayer_times:
+    print("API failed at startup.")
+    exit()
 
 ramadan_end = datetime(2026, 3, 19).date()
 
@@ -42,6 +44,9 @@ while True:
 
         with open("storage.json", "w") as f:
             json.dump(storage, f, indent=4)
+        new_times = get_prayer_times()
+        if new_times:
+            prayer_times = new_times
 
 
     current_time = now.strftime("%I:%M %p")
