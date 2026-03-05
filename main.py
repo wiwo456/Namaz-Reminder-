@@ -7,12 +7,12 @@ from prayertimes import get_prayer_times
 from notifier import send_notification
 
 
-# Load storage
+
 with open("storage.json", "r") as f:
     storage = json.load(f)
 
 
-# Load config
+
 with open("config.json", "r") as f:
     config = json.load(f)
     lat = config["lat"]
@@ -21,17 +21,16 @@ with open("config.json", "r") as f:
     api_key = config["api_key"]
 
 
-# Start notification
+
 send_notification("Namaz reminder is now active...")
 
-prayer_times = get_prayer_times()
+result = get_prayer_times()
 
-if not prayer_times:
-    print("API failed at startup.")
+if not result:
+    print("API failed at startup. Cannot fetch prayer times.")
     exit()
 
-ramadan_end = datetime(2026, 3, 19).date()
-
+prayer_times, hijri_month = result
 
 while True:
 
@@ -55,7 +54,7 @@ while True:
 
 
 
-    if today <= ramadan_end:
+    if hijri_month == 9: 
 
         maghrib_str = prayer_times["maghrib"]
 

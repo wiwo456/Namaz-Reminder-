@@ -13,7 +13,8 @@ def get_prayer_times():
 
         response = requests.get(url, timeout=10)
         data = response.json()
-
+        hijri_month = data["data"]["date"]["hijri"]["month"]["number"]
+       
         timings = data["data"]["timings"]
 
         def convert_time(t):
@@ -30,7 +31,7 @@ def get_prayer_times():
             "isha": convert_time(timings["Isha"])   
         }
 
-        return prayer_times
+        return prayer_times, hijri_month
     except Exception as e:
         print("The API error is: ", e)
         return None
