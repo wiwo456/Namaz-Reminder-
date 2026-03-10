@@ -1,27 +1,23 @@
 import requests
-import json 
+import os
 from datetime import datetime 
 
-with open("config.json","r") as f:
-    config = json.load(f)
-    lat = config["lat"]
-    lon = config["lon"]
+lat = os.getenv("LAT")
+lon = os.getenv("LON")
 
 def get_prayer_times():
     try:
-        url = f"http://api.aladhan.com/v1/timings?latitude={lat}&longitude={lon}&method=2"
+        url = f"https://api.aladhan.com/v1/timings?latitude={lat}&longitude={lon}&method=2"
 
         response = requests.get(url, timeout=10)
         data = response.json()
+
         hijri_month = data["data"]["date"]["hijri"]["month"]["number"]
-       
         timings = data["data"]["timings"]
 
         def convert_time(t):
             time_obj = datetime.strptime(t, "%H:%M")
             return time_obj.strftime("%I:%M %p")
-
-    
 
         prayer_times = {
             "fajr": convert_time(timings["Fajr"]), 
@@ -32,7 +28,7 @@ def get_prayer_times():
         }
 
         return prayer_times, hijri_month
+
     except Exception as e:
-        print("The API error is: ", e)
+        print("The API error is:", e)
         return None
-    
