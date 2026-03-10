@@ -9,7 +9,14 @@ with open("storage.json", "r") as f:
     storage = json.load(f)
 
 
-send_notification("Namaz reminder is now active...")
+if "startup" not in storage:
+
+    send_notification("Namaz reminder is now active...")
+
+    storage["startup"] = True
+
+    with open("storage.json", "w") as f:
+        json.dump(storage, f, indent=4)
 
 result = get_prayer_times()
 
