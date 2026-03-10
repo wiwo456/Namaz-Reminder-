@@ -1,23 +1,12 @@
-import requests
 import json
 import time
-import os
-from datetime import datetime
-from datetime import timedelta
-from prayertimes import get_prayer_times 
+from datetime import datetime, timedelta
+from prayertimes import get_prayer_times
 from notifier import send_notification
-
 
 
 with open("storage.json", "r") as f:
     storage = json.load(f)
-
-
-lat = os.getenv("LAT")
-lon = os.getenv("LON")
-user_key = os.getenv("USER_KEY")
-api_key = os.getenv("API_KEY")
-
 
 
 send_notification("Namaz reminder is now active...")
@@ -30,6 +19,7 @@ if not result:
 
 prayer_times, hijri_month = result
 
+
 while True:
 
     now = datetime.now()
@@ -37,13 +27,16 @@ while True:
 
     # Reset storage after midnight
     if now.hour == 0 and now.minute < 2:
+
         storage["prayers_sent"] = []
 
         with open("storage.json", "w") as f:
             json.dump(storage, f, indent=4)
+
         new_times = get_prayer_times()
+
         if new_times:
-            prayer_times = new_times
+            prayer_times, hijri_month = new_times
 
 
     current_time = now.strftime("%I:%M %p")
@@ -51,20 +44,30 @@ while True:
     print(f"the date is {today} and hour is {current_time}")
 
 
-
-    if hijri_month == 9: 
+    # Ramadan iftar reminder
+    if hijri_month == 9:
 
         maghrib_str = prayer_times["maghrib"]
 
-        maghrib_conv = datetime.strptime(maghrib_str, "%I:%M %p")
+        maghrib_time = datetime.strptime(maghrib_str, "%I:%M %p").time()
+
+        maghrib_conv = datetime.combine(today, maghrib_time)
 
         iftar_warning = maghrib_conv - timedelta(minutes=5)
 
         iftar_warning_str = iftar_warning.strftime("%I:%M %p")
 
-        if current_time == iftar_warning_str:
+        if current_time == iftar_warning_str and "iftar_warning" not in storage["prayers_sent"]:
+
             send_notification("🌙 Iftar is in 5 minutes")
 
+            storage["prayers_sent"].append("iftar_warning")
+
+            with open("storage.json", "w") as f:
+                json.dump(storage, f, indent=4)
+
+
+    # Prayer notifications
     for prayer_name, prayer_time in prayer_times.items():
 
         if current_time == prayer_time and prayer_name not in storage["prayers_sent"]:
