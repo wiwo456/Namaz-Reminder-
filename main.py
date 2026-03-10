@@ -1,6 +1,7 @@
 import requests
 import json
 import time
+import os
 from datetime import datetime
 from datetime import timedelta
 from prayertimes import get_prayer_times 
@@ -12,13 +13,10 @@ with open("storage.json", "r") as f:
     storage = json.load(f)
 
 
-
-with open("config.json", "r") as f:
-    config = json.load(f)
-    lat = config["lat"]
-    lon = config["lon"]
-    user_key = config["user_key"]
-    api_key = config["api_key"]
+lat = os.getenv("LAT")
+lon = os.getenv("LON")
+user_key = os.getenv("USER_KEY")
+api_key = os.getenv("API_KEY")
 
 
 
