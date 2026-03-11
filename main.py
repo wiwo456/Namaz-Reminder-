@@ -1,8 +1,7 @@
-import requests
 import json
 import time
-from datetime import datetime, timedelta
-from prayertimes import prayer_times
+from datetime import datetime
+from prayertimes import get_prayer_times
 from notifier import send_notification
 
 
@@ -10,20 +9,14 @@ from notifier import send_notification
 with open("storage.json", "r") as f:
     storage = json.load(f)
 
-# Load config
-with open("config.json", "r") as f:
-    config = json.load(f)
-    lat = config["lat"]
-    lon = config["lon"]
-    user_key = config["user_key"]
-    api_key = config["api_key"]
-
 
 send_notification("Namaz reminder is now active...")
 print("Namaz bot started...")
 
 
-ramadan_end = datetime(2026, 3, 19).date()
+# Get prayer times once when the bot starts
+prayer_times_today, hijri_month = get_prayer_times()
+last_fetch_day = datetime.now().date()
 
 
 while True:
@@ -31,33 +24,31 @@ while True:
     now = datetime.now()
     today = now.date()
 
-    # Reset storage every midnight
-    if now.hour == 0 and now.minute == 0:
-        storage["prayers_sent"] = []
+    # If a new day starts → fetch prayer times again
+    if today != last_fetch_day:
+        prayer_times_today, hijri_month = get_prayer_times()
+        last_fetch_day = today
+        storage = {}
+
         with open("storage.json", "w") as f:
             json.dump(storage, f, indent=4)
 
-    # Get prayer times
-    times = prayer_times(lat, lon)
+    current_time = now.strftime("%I:%M %p")
 
-    current_time = now.strftime("%H:%M")
+    for prayer, prayer_time in prayer_times_today.items():
 
-    for prayer, prayer_time in times.items():
+        today_str = str(today)
 
-        if prayer_time == current_time:
+        if today_str not in storage:
+            storage[today_str] = []
 
-            today_str = str(today)
+        if prayer_time == current_time and prayer not in storage[today_str]:
 
-            if today_str not in storage:
-                storage[today_str] = []
+            send_notification(f"It's time for {prayer}")
 
-            if prayer not in storage[today_str]:
+            storage[today_str].append(prayer)
 
-                send_notification(f"It's time for {prayer}")
-
-                storage[today_str].append(prayer)
-
-                with open("storage.json", "w") as f:
-                    json.dump(storage, f, indent=4)
+            with open("storage.json", "w") as f:
+                json.dump(storage, f, indent=4)
 
     time.sleep(30)
