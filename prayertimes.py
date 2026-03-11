@@ -1,9 +1,15 @@
 import requests
-import os
-from datetime import datetime 
+import json
+from datetime import datetime
 
-lat = os.getenv("LAT")
-lon = os.getenv("LON")
+
+# load config
+with open("config.json", "r") as f:
+    config = json.load(f)
+
+lat = config["lat"]
+lon = config["lon"]
+
 
 def get_prayer_times():
     try:
@@ -20,11 +26,11 @@ def get_prayer_times():
             return time_obj.strftime("%I:%M %p")
 
         prayer_times = {
-            "fajr": convert_time(timings["Fajr"]), 
+            "fajr": convert_time(timings["Fajr"]),
             "dhuhr": convert_time(timings["Dhuhr"]),
             "asr": convert_time(timings["Asr"]),
             "maghrib": convert_time(timings["Maghrib"]),
-            "isha": convert_time(timings["Isha"])   
+            "isha": convert_time(timings["Isha"])
         }
 
         return prayer_times, hijri_month

@@ -1,30 +1,29 @@
+import requests
 import json
 import time
 from datetime import datetime, timedelta
-from prayertimes import get_prayer_times
+from prayertimes import prayer_times
 from notifier import send_notification
 
 
+# Load storage file
 with open("storage.json", "r") as f:
     storage = json.load(f)
 
+# Load config
+with open("config.json", "r") as f:
+    config = json.load(f)
+    lat = config["lat"]
+    lon = config["lon"]
+    user_key = config["user_key"]
+    api_key = config["api_key"]
 
-if "startup" not in storage:
 
-    send_notification("Namaz reminder is now active...")
+send_notification("Namaz reminder is now active...")
+print("Namaz bot started...")
 
-    storage["startup"] = True
 
-    with open("storage.json", "w") as f:
-        json.dump(storage, f, indent=4)
-
-result = get_prayer_times()
-
-if not result:
-    print("API failed at startup. Cannot fetch prayer times.")
-    exit()
-
-prayer_times, hijri_month = result
+ramadan_end = datetime(2026, 3, 19).date()
 
 
 while True:
@@ -32,59 +31,33 @@ while True:
     now = datetime.now()
     today = now.date()
 
-    # Reset storage after midnight
-    if now.hour == 0 and now.minute < 2:
-
+    # Reset storage every midnight
+    if now.hour == 0 and now.minute == 0:
         storage["prayers_sent"] = []
-
         with open("storage.json", "w") as f:
             json.dump(storage, f, indent=4)
 
-        new_times = get_prayer_times()
+    # Get prayer times
+    times = prayer_times(lat, lon)
 
-        if new_times:
-            prayer_times, hijri_month = new_times
+    current_time = now.strftime("%H:%M")
 
+    for prayer, prayer_time in times.items():
 
-    current_time = now.strftime("%I:%M %p")
+        if prayer_time == current_time:
 
-    print(f"the date is {today} and hour is {current_time}")
+            today_str = str(today)
 
+            if today_str not in storage:
+                storage[today_str] = []
 
-    # Ramadan iftar reminder
-    if hijri_month == 9:
+            if prayer not in storage[today_str]:
 
-        maghrib_str = prayer_times["maghrib"]
+                send_notification(f"It's time for {prayer}")
 
-        maghrib_time = datetime.strptime(maghrib_str, "%I:%M %p").time()
+                storage[today_str].append(prayer)
 
-        maghrib_conv = datetime.combine(today, maghrib_time)
+                with open("storage.json", "w") as f:
+                    json.dump(storage, f, indent=4)
 
-        iftar_warning = maghrib_conv - timedelta(minutes=5)
-
-        iftar_warning_str = iftar_warning.strftime("%I:%M %p")
-
-        if current_time == iftar_warning_str and "iftar_warning" not in storage["prayers_sent"]:
-
-            send_notification("🌙 Iftar is in 5 minutes")
-
-            storage["prayers_sent"].append("iftar_warning")
-
-            with open("storage.json", "w") as f:
-                json.dump(storage, f, indent=4)
-
-
-    # Prayer notifications
-    for prayer_name, prayer_time in prayer_times.items():
-
-        if current_time == prayer_time and prayer_name not in storage["prayers_sent"]:
-
-            send_notification(f"🕌 It is time for {prayer_name}")
-
-            storage["prayers_sent"].append(prayer_name)
-
-            with open("storage.json", "w") as f:
-                json.dump(storage, f, indent=4)
-
-
-    time.sleep(60)
+    time.sleep(30)

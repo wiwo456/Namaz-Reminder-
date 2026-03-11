@@ -1,8 +1,13 @@
 import requests
-import os
+import json
 
-user_key = os.getenv("USER_KEY")
-api_key = os.getenv("API_KEY")
+# load config file
+with open("config.json", "r") as f:
+    config = json.load(f)
+
+user_key = config["user_key"]
+api_key = config["api_key"]
+
 
 def send_notification(message):
     url = "https://api.pushover.net/1/messages.json"
