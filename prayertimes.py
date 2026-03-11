@@ -3,7 +3,6 @@ import json
 from datetime import datetime
 
 
-# load config
 with open("config.json", "r") as f:
     config = json.load(f)
 
@@ -13,6 +12,7 @@ lon = config["lon"]
 
 def get_prayer_times():
     try:
+
         url = f"https://api.aladhan.com/v1/timings?latitude={lat}&longitude={lon}&method=2"
 
         response = requests.get(url, timeout=10)
@@ -22,6 +22,7 @@ def get_prayer_times():
         timings = data["data"]["timings"]
 
         def convert_time(t):
+            t = t.split(" ")[0]
             time_obj = datetime.strptime(t, "%H:%M")
             return time_obj.strftime("%I:%M %p")
 
@@ -36,5 +37,5 @@ def get_prayer_times():
         return prayer_times, hijri_month
 
     except Exception as e:
-        print("The API error is:", e)
-        return None
+        print("API error:", e)
+        return None, None

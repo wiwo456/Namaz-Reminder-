@@ -1,7 +1,6 @@
 import requests
 import json
 
-# load config file
 with open("config.json", "r") as f:
     config = json.load(f)
 
@@ -10,6 +9,7 @@ api_key = config["api_key"]
 
 
 def send_notification(message):
+
     url = "https://api.pushover.net/1/messages.json"
 
     data = {
