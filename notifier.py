@@ -1,21 +1,29 @@
 import requests
 import json
 
+# Load config
 with open("config.json", "r") as f:
     config = json.load(f)
 
-user_key = config["user_key"]
-api_key = config["api_key"]
+TOKEN = config["discord_token"]
+CHANNEL_ID = config["channel_id"]
 
+# Discord API endpoint
+url = f"https://discord.com/api/v10/channels/{CHANNEL_ID}/messages"
+
+# Headers for authentication
+headers = {
+    "Authorization": f"Bot {TOKEN}",
+    "Content-Type": "application/json"
+}
 
 def send_notification(message):
-
-    url = "https://api.pushover.net/1/messages.json"
-
     data = {
-        "token": api_key,
-        "user": user_key,
-        "message": message
+        "content": message
     }
 
-    requests.post(url, data=data)
+    response = requests.post(url, headers=headers, json=data)
+
+    # Optional: print if something fails
+    if response.status_code != 200:
+        print("Error sending message:", response.text)
