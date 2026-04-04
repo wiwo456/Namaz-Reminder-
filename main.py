@@ -27,6 +27,9 @@ while True:
     # If a new day starts → fetch prayer times again
     if today != last_fetch_day:
         prayer_times_today, hijri_month = get_prayer_times()
+        if prayer_times_today is None:
+            time.sleep(60)
+            continue
         last_fetch_day = today
         storage = {}
 
@@ -44,7 +47,7 @@ while True:
 
         if prayer_time == current_time and prayer not in storage[today_str]:
 
-            send_notification(f"It's time for {prayer}")
+            send_notification(f"🕌 {prayer.capitalize()} time")
 
             storage[today_str].append(prayer)
 

@@ -22,7 +22,7 @@ def send_notification(message):
         "content": message
     }
 
-    response = requests.post(url, headers=headers, json=data)
+    response = requests.post(url, headers=headers, json=data, timeout=10)
 
     # Optional: print if something fails
     if response.status_code != 200:
