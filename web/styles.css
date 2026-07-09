@@ -123,20 +123,44 @@ p {
     display: flex;
     justify-content: space-between;
     gap: 16px;
-    align-items: flex-start;
+    align-items: center;
     margin-bottom: 18px;
+}
+
+.app-title {
+    flex: 1;
+}
+
+.menu-button {
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid var(--line);
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
+}
+
+.menu-button span {
+    width: 20px;
+    height: 2px;
+    margin: 0 auto;
+    border-radius: 999px;
+    background: var(--ink);
 }
 
 .app-header h2,
 .section-heading h3,
-.widget-header h3,
 .hero-card h3 {
     margin-bottom: 0;
 }
 
 .hero-card,
-.panel,
-.widget-card {
+.panel {
     border-radius: 26px;
     padding: 18px;
     background: var(--card);
@@ -155,20 +179,19 @@ p {
     color: rgba(255, 255, 255, 0.78);
 }
 
+.main-hero-card {
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .hero-time {
     margin: 10px 0 6px;
     font-size: 2.3rem;
     font-weight: 800;
 }
 
-.widget-card {
-    margin-bottom: 14px;
-    background: linear-gradient(180deg, #30463c 0%, var(--widget) 100%);
-    color: var(--white);
-    border-color: transparent;
-}
-
-.widget-header,
 .section-heading {
     display: flex;
     justify-content: space-between;
@@ -176,45 +199,26 @@ p {
     gap: 12px;
 }
 
-.widget-chip {
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.14);
-    color: var(--widget-soft);
-    font-size: 0.76rem;
-    font-weight: 700;
-}
-
-.widget-content {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: end;
-    margin-top: 18px;
-}
-
-.widget-prayer {
-    margin-bottom: 6px;
-    color: var(--widget-soft);
-    font-size: 0.95rem;
-}
-
-.widget-time {
-    margin-bottom: 0;
-    font-size: 1.75rem;
-    font-weight: 800;
-}
-
-.widget-countdown {
-    max-width: 120px;
-    margin-bottom: 0;
-    text-align: right;
-    color: var(--widget-soft);
-    font-size: 0.95rem;
-}
-
 .panel + .panel {
     margin-top: 14px;
+}
+
+.settings-panel {
+    margin-top: 0;
+}
+
+.hidden-panel {
+    display: none;
+}
+
+.menu-panel {
+    display: grid;
+    gap: 14px;
+    margin-top: 14px;
+}
+
+.prayer-panel {
+    margin-top: 0;
 }
 
 .card-label {
@@ -398,15 +402,10 @@ button {
         grid-template-columns: 1fr;
     }
 
-    .widget-content,
     .section-heading,
     .app-header,
     .toggle-row {
         flex-direction: column;
         align-items: flex-start;
-    }
-
-    .widget-countdown {
-        text-align: left;
     }
 }

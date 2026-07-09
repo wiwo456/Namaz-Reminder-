@@ -13,12 +13,11 @@ const PRAYER_ORDER = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
 const elements = {
     todayLabel: document.getElementById("todayLabel"),
+    menuButton: document.getElementById("menuButton"),
+    settingsPanel: document.getElementById("settingsPanel"),
     nextPrayerName: document.getElementById("nextPrayerName"),
     nextPrayerTime: document.getElementById("nextPrayerTime"),
     countdownText: document.getElementById("countdownText"),
-    widgetPrayerName: document.getElementById("widgetPrayerName"),
-    widgetPrayerTime: document.getElementById("widgetPrayerTime"),
-    widgetCountdown: document.getElementById("widgetCountdown"),
     notificationsToggle: document.getElementById("notificationsToggle"),
     useLocationButton: document.getElementById("useLocationButton"),
     useSavedButton: document.getElementById("useSavedButton"),
@@ -35,6 +34,7 @@ let currentSchedule = null;
 let nextPrayerTimer = null;
 let reminderTimeoutId = null;
 let lastReminderPrayer = null;
+let settingsOpen = false;
 
 function loadSettings() {
     try {
@@ -56,8 +56,8 @@ function setStatus(message) {
 function setFormFromSettings() {
     elements.notificationsToggle.checked = appSettings.notificationsEnabled;
     const locationText = `${appSettings.locationSource} • ${appSettings.currentLatitude.toFixed(4)}, ${appSettings.currentLongitude.toFixed(4)}`;
-    elements.locationSummary.textContent = locationText;
     elements.settingsLocationSummary.textContent = locationText;
+    elements.locationSummary.textContent = locationText;
     elements.todayLabel.textContent = new Date().toLocaleDateString([], {
         month: "short",
         day: "numeric",
@@ -129,12 +129,6 @@ function updateNextPrayerDisplay() {
     elements.countdownText.textContent = countdown === "Now"
         ? `${nextPrayer.name} time`
         : `${nextPrayer.name} ${countdown}`;
-
-    elements.widgetPrayerName.textContent = nextPrayer.name;
-    elements.widgetPrayerTime.textContent = nextPrayer.displayTime;
-    elements.widgetCountdown.textContent = countdown === "Now"
-        ? "Time now"
-        : countdown;
 
     renderPrayerList(currentSchedule.prayers, nextPrayer.name);
 }
@@ -307,7 +301,17 @@ function requestDeviceLocation() {
     );
 }
 
+function setSettingsOpen(isOpen) {
+    settingsOpen = isOpen;
+    elements.settingsPanel.classList.toggle("hidden-panel", !isOpen);
+    elements.settingsPanel.setAttribute("aria-hidden", String(!isOpen));
+    elements.menuButton.setAttribute("aria-expanded", String(isOpen));
+}
+
 function bindEvents() {
+    elements.menuButton.addEventListener("click", () => {
+        setSettingsOpen(!settingsOpen);
+    });
     elements.useLocationButton.addEventListener("click", requestDeviceLocation);
     elements.useSavedButton.addEventListener("click", applyHomeCoordinates);
     elements.saveHomeButton.addEventListener("click", saveCurrentAsHome);
