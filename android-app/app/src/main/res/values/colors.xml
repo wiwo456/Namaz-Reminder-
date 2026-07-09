@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sand">#F7F1E5</color>
+    <color name="forest">#1F4D3A</color>
+    <color name="slate">#4E5B56</color>
+    <color name="card">#FFFFFB</color>
+    <color name="cardStroke">#D8D1C3</color>
+    <color name="statusBar">#E8DFC9</color>
+    <color name="launcherBackground">#1F4D3A</color>
+    <color name="heroText">#FFFDF8</color>
+    <color name="heroMuted">#DDEBE2</color>
+    <color name="widgetBackground">#233930</color>
+    <color name="widgetText">#FFFDF8</color>
+    <color name="widgetMuted">#C8D8CE</color>
+    <color name="rowStroke">#EEE4D3</color>
+    <color name="activeRow">#EDF7EF</color>
+    <color name="activeRowStroke">#9EBDAA</color>
+</resources>

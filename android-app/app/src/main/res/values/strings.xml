@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Namaz Reminder</string>
+    <string name="mobile_preview_label">Mobile app</string>
+    <string name="date_placeholder">Today</string>
+    <string name="next_prayer_label">Next Prayer</string>
+    <string name="waiting_label">Waiting</string>
+    <string name="time_placeholder">--:--</string>
+    <string name="countdown_placeholder">Load prayer times to start.</string>
+    <string name="widget_preview_label">Widget Preview</string>
+    <string name="settings_label">Settings</string>
+    <string name="settings_title">Location and reminders</string>
+    <string name="use_device_location">Use my location</string>
+    <string name="use_home_location">Use home</string>
+    <string name="calculation_method_hint">Calculation method</string>
+    <string name="notifications_title">Phone reminders</string>
+    <string name="notifications_subtitle">Schedule notifications for today’s prayers</string>
+    <string name="current_location_summary_placeholder">Using stored location</string>
+    <string name="save_as_home">Save as home</string>
+    <string name="load_prayer_times">Load prayer times</string>
+    <string name="status_ready">Ready.</string>
+    <string name="today_label">Today</string>
+    <string name="prayer_times_title">Prayer Times</string>
+    <string name="location_summary_placeholder">Waiting for location</string>
+    <string name="home_coordinates_source">Home coordinates</string>
+    <string name="device_location_source">Device location</string>
+    <string name="home_coordinates_loaded">Home coordinates loaded.</string>
+    <string name="home_coordinates_saved">Saved current coordinates as home.</string>
+    <string name="loading_location">Requesting location…</string>
+    <string name="location_unavailable">Location was unavailable.</string>
+    <string name="device_location_loaded">Device location received.</string>
+    <string name="location_permission_denied">Location permission was denied.</string>
+    <string name="notification_permission_denied">Notification permission was denied.</string>
+    <string name="loading_prayer_times">Loading prayer times…</string>
+    <string name="loaded_schedule_status">Loaded %1$s prayer times.</string>
+    <string name="loading_error">Could not load prayer times: %1$s</string>
+    <string name="location_summary_value">%1$s • %2$s, %3$s</string>
+    <string name="prayer_time_now">%1$s time</string>
+    <string name="prayer_countdown_format">%1$s %2$s</string>
+    <string name="notification_channel_name">Prayer reminders</string>
+    <string name="notification_channel_description">Notifications for prayer times</string>
+    <string name="notification_message">%1$s time is now.</string>
+    <string name="widget_label">Namaz Reminder</string>
+    <string name="widget_description">Shows the next prayer and countdown.</string>
+</resources>

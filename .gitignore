@@ -2,5 +2,8 @@ __pycache__/
 .DS_Store
 config.json
 storage.json
-
-
+android-app/.gradle/
+android-app/local.properties
+android-app/**/build/
+android-app/.idea/
+android-app/BLOCK1_PENDING.md
