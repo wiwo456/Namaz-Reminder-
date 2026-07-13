@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#1f5b43" />
+    <meta name="description" content="Namaz Reminder settings page." />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml" />
+    <title>Namaz Reminder Settings</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <main class="app-shell">
+        <section class="app-screen">
+            <header class="app-header">
+                <div class="app-title">
+                    <p class="eyebrow">Settings</p>
+                    <h1>App Setup</h1>
+                </div>
+                <button id="backButton" class="secondary-button back-button" type="button">Back</button>
+            </header>
+
+            <section class="view-screen">
+                <section class="panel settings-page">
+                    <div class="button-row">
+                        <button id="useLocationButton" class="primary-button">Use My Location</button>
+                        <button id="useSavedButton" class="secondary-button">Use Home</button>
+                    </div>
+
+                    <div class="button-row">
+                        <button id="saveHomeButton" class="secondary-button">Save as Home</button>
+                        <button id="loadTimesButton" class="primary-button">Refresh Times</button>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <p class="toggle-title">Browser reminders</p>
+                            <p class="toggle-copy">Works while this page stays open.</p>
+                        </div>
+                        <label class="switch">
+                            <input id="notificationsToggle" type="checkbox" />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="install-card">
+                        <p class="card-label">Install</p>
+                        <h3>Install This App</h3>
+                        <p id="installStatus" class="status-text">
+                            Open this app in Chrome on Android, then use Install app when available.
+                        </p>
+                        <button id="installButton" class="primary-button install-button hidden-panel" type="button">
+                            Install App
+                        </button>
+                    </div>
+
+                    <p id="settingsLocationSummary" class="section-support">Using stored location</p>
+                    <p id="statusText" class="status-text">Ready.</p>
+                </section>
+            </section>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

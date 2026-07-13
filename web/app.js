@@ -8,13 +8,14 @@ const DEFAULT_SETTINGS = {
     locationSource: "Home coordinates",
     notificationsEnabled: false,
 };
-
 const PRAYER_ORDER = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
 
 const elements = {
     todayLabel: document.getElementById("todayLabel"),
     menuButton: document.getElementById("menuButton"),
-    settingsPanel: document.getElementById("settingsPanel"),
+    menuDropdown: document.getElementById("menuDropdown"),
+    settingsMenuItem: document.getElementById("settingsMenuItem"),
+    backButton: document.getElementById("backButton"),
     installButton: document.getElementById("installButton"),
     installStatus: document.getElementById("installStatus"),
     nextPrayerName: document.getElementById("nextPrayerName"),
@@ -36,8 +37,8 @@ let currentSchedule = null;
 let nextPrayerTimer = null;
 let reminderTimeoutId = null;
 let lastReminderPrayer = null;
-let settingsOpen = false;
 let deferredInstallPrompt = null;
+let menuOpen = false;
 
 function isIosBrowser() {
     return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
@@ -57,7 +58,9 @@ function saveSettings() {
 }
 
 function setStatus(message) {
-    elements.statusText.textContent = message;
+    if (elements.statusText) {
+        elements.statusText.textContent = message;
+    }
 }
 
 function setInstallStatus(message) {
@@ -66,23 +69,41 @@ function setInstallStatus(message) {
     }
 }
 
-function setFormFromSettings() {
-    elements.notificationsToggle.checked = appSettings.notificationsEnabled;
-    const locationText = `${appSettings.locationSource} • ${appSettings.currentLatitude.toFixed(4)}, ${appSettings.currentLongitude.toFixed(4)}`;
-    elements.settingsLocationSummary.textContent = locationText;
-    elements.locationSummary.textContent = locationText;
-    elements.todayLabel.textContent = new Date().toLocaleDateString([], {
-        month: "short",
-        day: "numeric",
-    });
-}
-
-function updateInstallButtonVisibility() {
-    if (!elements.installButton) {
+function setMenuOpen(isOpen) {
+    if (!elements.menuDropdown || !elements.menuButton) {
         return;
     }
 
-    elements.installButton.classList.toggle("hidden-panel", !deferredInstallPrompt);
+    menuOpen = isOpen;
+    elements.menuDropdown.classList.toggle("hidden-panel", !isOpen);
+    elements.menuDropdown.setAttribute("aria-hidden", String(!isOpen));
+    elements.menuButton.setAttribute("aria-expanded", String(isOpen));
+}
+
+function setFormFromSettings() {
+    const locationText = `${appSettings.locationSource} • ${appSettings.currentLatitude.toFixed(4)}, ${appSettings.currentLongitude.toFixed(4)}`;
+
+    if (elements.notificationsToggle) {
+        elements.notificationsToggle.checked = appSettings.notificationsEnabled;
+    }
+    if (elements.settingsLocationSummary) {
+        elements.settingsLocationSummary.textContent = locationText;
+    }
+    if (elements.locationSummary) {
+        elements.locationSummary.textContent = locationText;
+    }
+    if (elements.todayLabel) {
+        elements.todayLabel.textContent = new Date().toLocaleDateString([], {
+            month: "short",
+            day: "numeric",
+        });
+    }
+}
+
+function updateInstallButtonVisibility() {
+    if (elements.installButton) {
+        elements.installButton.classList.toggle("hidden-panel", !deferredInstallPrompt);
+    }
 }
 
 function parseTime24ToDate(time24) {
@@ -137,8 +158,26 @@ function findNextPrayer(prayers) {
     };
 }
 
+function renderPrayerList(prayers, activePrayerName) {
+    if (!elements.prayerList) {
+        return;
+    }
+
+    elements.prayerList.innerHTML = prayers
+        .map((prayer) => {
+            const activeClass = prayer.name === activePrayerName ? "active" : "";
+            return `
+                <div class="prayer-row ${activeClass}">
+                    <span class="prayer-name">${prayer.name}</span>
+                    <span class="prayer-time">${prayer.displayTime}</span>
+                </div>
+            `;
+        })
+        .join("");
+}
+
 function updateNextPrayerDisplay() {
-    if (!currentSchedule) {
+    if (!currentSchedule || !elements.nextPrayerName || !elements.nextPrayerTime || !elements.countdownText) {
         return;
     }
 
@@ -152,20 +191,6 @@ function updateNextPrayerDisplay() {
         : `${nextPrayer.name} ${countdown}`;
 
     renderPrayerList(currentSchedule.prayers, nextPrayer.name);
-}
-
-function renderPrayerList(prayers, activePrayerName) {
-    elements.prayerList.innerHTML = prayers
-        .map((prayer) => {
-            const activeClass = prayer.name === activePrayerName ? "active" : "";
-            return `
-                <div class="prayer-row ${activeClass}">
-                    <span class="prayer-name">${prayer.name}</span>
-                    <span class="prayer-time">${prayer.displayTime}</span>
-                </div>
-            `;
-        })
-        .join("");
 }
 
 function startCountdownTimer() {
@@ -211,7 +236,9 @@ async function enableNotificationsIfNeeded() {
 
     if (!("Notification" in window)) {
         setStatus("This browser does not support notifications.");
-        elements.notificationsToggle.checked = false;
+        if (elements.notificationsToggle) {
+            elements.notificationsToggle.checked = false;
+        }
         appSettings.notificationsEnabled = false;
         saveSettings();
         return false;
@@ -225,7 +252,9 @@ async function enableNotificationsIfNeeded() {
 
     if (permission !== "granted") {
         setStatus("Notification permission was not granted.");
-        elements.notificationsToggle.checked = false;
+        if (elements.notificationsToggle) {
+            elements.notificationsToggle.checked = false;
+        }
         appSettings.notificationsEnabled = false;
         saveSettings();
         return false;
@@ -314,7 +343,7 @@ function requestDeviceLocation() {
             appSettings.locationSource = "Device location";
             saveSettings();
             setFormFromSettings();
-            setStatus("Device location received. Load prayer times to refresh.");
+            setStatus("Device location received. Refresh times to update.");
         },
         () => {
             setStatus("Location permission was denied or unavailable.");
@@ -322,21 +351,69 @@ function requestDeviceLocation() {
     );
 }
 
-function setSettingsOpen(isOpen) {
-    settingsOpen = isOpen;
-    elements.settingsPanel.classList.toggle("hidden-panel", !isOpen);
-    elements.settingsPanel.setAttribute("aria-hidden", String(!isOpen));
-    elements.menuButton.setAttribute("aria-expanded", String(isOpen));
-}
-
 function bindEvents() {
-    elements.menuButton.addEventListener("click", () => {
-        setSettingsOpen(!settingsOpen);
+    if (elements.menuButton) {
+        elements.menuButton.addEventListener("click", (event) => {
+            event.preventDefault();
+            setMenuOpen(!menuOpen);
+        });
+    }
+
+    if (elements.settingsMenuItem) {
+        elements.settingsMenuItem.addEventListener("click", () => {
+            window.location.href = "./settings.html";
+        });
+    }
+
+    if (elements.backButton) {
+        elements.backButton.addEventListener("click", () => {
+            window.location.href = "./index.html";
+        });
+    }
+
+    document.addEventListener("click", (event) => {
+        if (!menuOpen || !elements.menuDropdown || !elements.menuButton) {
+            return;
+        }
+
+        const clickedInsideMenu = elements.menuDropdown.contains(event.target) || elements.menuButton.contains(event.target);
+        if (!clickedInsideMenu) {
+            setMenuOpen(false);
+        }
     });
+
+    if (elements.useLocationButton) {
+        elements.useLocationButton.addEventListener("click", requestDeviceLocation);
+    }
+    if (elements.useSavedButton) {
+        elements.useSavedButton.addEventListener("click", applyHomeCoordinates);
+    }
+    if (elements.saveHomeButton) {
+        elements.saveHomeButton.addEventListener("click", saveCurrentAsHome);
+    }
+    if (elements.loadTimesButton) {
+        elements.loadTimesButton.addEventListener("click", loadPrayerTimes);
+    }
+
+    if (elements.notificationsToggle) {
+        elements.notificationsToggle.addEventListener("change", async () => {
+            appSettings.notificationsEnabled = elements.notificationsToggle.checked;
+            saveSettings();
+            const notificationsReady = await enableNotificationsIfNeeded();
+
+            if (notificationsReady) {
+                scheduleBrowserReminder();
+                setStatus(appSettings.notificationsEnabled
+                    ? "Browser reminders enabled while this page stays open."
+                    : "Browser reminders disabled.");
+            }
+        });
+    }
+
     if (elements.installButton) {
         elements.installButton.addEventListener("click", async () => {
             if (!deferredInstallPrompt) {
-                setInstallStatus("Install is not available yet on this browser.");
+                setInstallStatus("Use Chrome menu > Install app if the browser button is not ready yet.");
                 return;
             }
 
@@ -344,31 +421,15 @@ function bindEvents() {
             const choice = await deferredInstallPrompt.userChoice;
 
             if (choice.outcome === "accepted") {
-                setInstallStatus("App install accepted. Check your phone home screen.");
+                setInstallStatus("App install accepted. Check your home screen.");
             } else {
-                setInstallStatus("Install was dismissed. You can try again from the browser menu.");
+                setInstallStatus("Install was dismissed. You can try again from the Chrome menu.");
             }
 
             deferredInstallPrompt = null;
             updateInstallButtonVisibility();
         });
     }
-    elements.useLocationButton.addEventListener("click", requestDeviceLocation);
-    elements.useSavedButton.addEventListener("click", applyHomeCoordinates);
-    elements.saveHomeButton.addEventListener("click", saveCurrentAsHome);
-    elements.loadTimesButton.addEventListener("click", loadPrayerTimes);
-    elements.notificationsToggle.addEventListener("change", async () => {
-        appSettings.notificationsEnabled = elements.notificationsToggle.checked;
-        saveSettings();
-        const notificationsReady = await enableNotificationsIfNeeded();
-
-        if (notificationsReady) {
-            scheduleBrowserReminder();
-            setStatus(appSettings.notificationsEnabled
-                ? "Browser reminders enabled while this page stays open."
-                : "Browser reminders disabled.");
-        }
-    });
 }
 
 function bindPwaEvents() {
@@ -376,7 +437,7 @@ function bindPwaEvents() {
         event.preventDefault();
         deferredInstallPrompt = event;
         updateInstallButtonVisibility();
-        setInstallStatus("Install is ready. Tap the button to add it to your phone.");
+        setInstallStatus("Install is ready. Tap Install App.");
     });
 
     window.addEventListener("appinstalled", () => {
@@ -390,18 +451,18 @@ async function registerServiceWorker() {
     if (!("serviceWorker" in navigator)) {
         setInstallStatus(
             isIosBrowser()
-                ? "Install from Safari using Add to Home Screen. Offline support depends on iPhone browser limits."
-                : "Install from your browser menu. Offline support is limited on this browser."
+                ? "Open in Safari and use Add to Home Screen."
+                : "Install from the browser menu. Offline support is limited here."
         );
         return;
     }
 
     try {
-        await navigator.serviceWorker.register("./sw.js");
+        await navigator.serviceWorker.register("./sw.js?v=4");
         setInstallStatus(
             isIosBrowser()
-                ? "Open in Safari and use Add to Home Screen for the best install experience."
-                : "PWA ready. Use the install prompt or browser menu to add it to your phone."
+                ? "Open in Safari and use Add to Home Screen."
+                : "Use Chrome menu > Install app, or tap Install App here."
         );
     } catch (error) {
         setInstallStatus(`PWA setup failed: ${error.message}`);

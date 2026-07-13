@@ -1,4 +1,4 @@
-const CACHE_NAME = "namaz-reminder-pwa-v1";
+const CACHE_NAME = "namaz-reminder-pwa-v4";
 const APP_ASSETS = [
     "./",
     "./index.html",
