@@ -15,6 +15,8 @@ const elements = {
     todayLabel: document.getElementById("todayLabel"),
     menuButton: document.getElementById("menuButton"),
     settingsPanel: document.getElementById("settingsPanel"),
+    installButton: document.getElementById("installButton"),
+    installStatus: document.getElementById("installStatus"),
     nextPrayerName: document.getElementById("nextPrayerName"),
     nextPrayerTime: document.getElementById("nextPrayerTime"),
     countdownText: document.getElementById("countdownText"),
@@ -35,6 +37,11 @@ let nextPrayerTimer = null;
 let reminderTimeoutId = null;
 let lastReminderPrayer = null;
 let settingsOpen = false;
+let deferredInstallPrompt = null;
+
+function isIosBrowser() {
+    return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
+}
 
 function loadSettings() {
     try {
@@ -53,6 +60,12 @@ function setStatus(message) {
     elements.statusText.textContent = message;
 }
 
+function setInstallStatus(message) {
+    if (elements.installStatus) {
+        elements.installStatus.textContent = message;
+    }
+}
+
 function setFormFromSettings() {
     elements.notificationsToggle.checked = appSettings.notificationsEnabled;
     const locationText = `${appSettings.locationSource} • ${appSettings.currentLatitude.toFixed(4)}, ${appSettings.currentLongitude.toFixed(4)}`;
@@ -62,6 +75,14 @@ function setFormFromSettings() {
         month: "short",
         day: "numeric",
     });
+}
+
+function updateInstallButtonVisibility() {
+    if (!elements.installButton) {
+        return;
+    }
+
+    elements.installButton.classList.toggle("hidden-panel", !deferredInstallPrompt);
 }
 
 function parseTime24ToDate(time24) {
@@ -312,6 +333,26 @@ function bindEvents() {
     elements.menuButton.addEventListener("click", () => {
         setSettingsOpen(!settingsOpen);
     });
+    if (elements.installButton) {
+        elements.installButton.addEventListener("click", async () => {
+            if (!deferredInstallPrompt) {
+                setInstallStatus("Install is not available yet on this browser.");
+                return;
+            }
+
+            deferredInstallPrompt.prompt();
+            const choice = await deferredInstallPrompt.userChoice;
+
+            if (choice.outcome === "accepted") {
+                setInstallStatus("App install accepted. Check your phone home screen.");
+            } else {
+                setInstallStatus("Install was dismissed. You can try again from the browser menu.");
+            }
+
+            deferredInstallPrompt = null;
+            updateInstallButtonVisibility();
+        });
+    }
     elements.useLocationButton.addEventListener("click", requestDeviceLocation);
     elements.useSavedButton.addEventListener("click", applyHomeCoordinates);
     elements.saveHomeButton.addEventListener("click", saveCurrentAsHome);
@@ -330,9 +371,49 @@ function bindEvents() {
     });
 }
 
+function bindPwaEvents() {
+    window.addEventListener("beforeinstallprompt", (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        updateInstallButtonVisibility();
+        setInstallStatus("Install is ready. Tap the button to add it to your phone.");
+    });
+
+    window.addEventListener("appinstalled", () => {
+        deferredInstallPrompt = null;
+        updateInstallButtonVisibility();
+        setInstallStatus("Namaz Reminder is installed on this device.");
+    });
+}
+
+async function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) {
+        setInstallStatus(
+            isIosBrowser()
+                ? "Install from Safari using Add to Home Screen. Offline support depends on iPhone browser limits."
+                : "Install from your browser menu. Offline support is limited on this browser."
+        );
+        return;
+    }
+
+    try {
+        await navigator.serviceWorker.register("./sw.js");
+        setInstallStatus(
+            isIosBrowser()
+                ? "Open in Safari and use Add to Home Screen for the best install experience."
+                : "PWA ready. Use the install prompt or browser menu to add it to your phone."
+        );
+    } catch (error) {
+        setInstallStatus(`PWA setup failed: ${error.message}`);
+    }
+}
+
 async function initialize() {
     bindEvents();
+    bindPwaEvents();
     setFormFromSettings();
+    updateInstallButtonVisibility();
+    await registerServiceWorker();
     await loadPrayerTimes();
 }
 

@@ -3,101 +3,82 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Namaz Reminder Web Preview</title>
+    <meta name="theme-color" content="#1f5b43" />
+    <meta name="description" content="Namaz Reminder PWA with design preview, implementation status, and phone install flow." />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml" />
+    <title>Namaz Reminder PWA</title>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <main class="page-shell">
-        <section class="intro-panel">
-            <p class="eyebrow">Preview First</p>
-            <h1>Namaz Reminder</h1>
-            <p class="intro-copy">
-                This browser version mirrors the phone app flow: home location, live location,
-                today’s prayer times, countdown, reminders, and a widget preview.
-            </p>
-
-            <div class="intro-note">
-                <p class="note-title">What this preview covers</p>
-                <p class="note-copy">
-                    App layout, saved settings, next prayer logic, countdown, browser reminders,
-                    and widget-style display.
-                </p>
-            </div>
-        </section>
-
-        <section class="phone-stage">
-            <div class="phone-frame">
-                <div class="phone-notch"></div>
-
-                <div class="phone-screen">
-                    <header class="app-header">
-                        <button id="menuButton" class="menu-button" type="button" aria-label="Open settings" aria-expanded="false">
-                            <span></span>
-                            <span></span>
-                            <span></span>
-                        </button>
-                        <div class="app-title">
-                            <p class="eyebrow">Mobile Preview</p>
-                            <h2>Namaz Reminder</h2>
-                        </div>
-                        <p id="todayLabel" class="header-date">Today</p>
-                    </header>
-
-                    <section class="hero-card main-hero-card">
-                        <p class="card-label">Next Prayer</p>
-                        <h3 id="nextPrayerName">Waiting</h3>
-                        <p id="nextPrayerTime" class="hero-time">--:--</p>
-                        <p id="countdownText" class="hero-subtext">Load prayer times to start.</p>
-                    </section>
-
-                    <section id="settingsPanel" class="menu-panel hidden-panel" aria-hidden="true">
-                        <section class="panel settings-panel">
-                            <div class="section-heading">
-                                <div>
-                                    <p class="card-label">Settings</p>
-                                    <h3>Location & Reminders</h3>
-                                </div>
-                            </div>
-
-                            <div class="button-row">
-                                <button id="useLocationButton" class="primary-button">Use My Location</button>
-                                <button id="useSavedButton" class="secondary-button">Use Home</button>
-                            </div>
-
-                            <div class="toggle-row">
-                                <div>
-                                    <p class="toggle-title">Browser reminders</p>
-                                    <p class="toggle-copy">Works while this page stays open.</p>
-                                </div>
-                                <label class="switch">
-                                    <input id="notificationsToggle" type="checkbox" />
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-
-                            <div class="button-row">
-                                <button id="saveHomeButton" class="secondary-button">Save as Home</button>
-                                <button id="loadTimesButton" class="primary-button">Load Prayer Times</button>
-                            </div>
-
-                            <p id="settingsLocationSummary" class="section-support">Using stored location</p>
-                            <p id="statusText" class="status-text">Ready.</p>
-                        </section>
-
-                        <section class="panel prayer-panel">
-                            <div class="section-heading">
-                                <div>
-                                    <p class="card-label">Today</p>
-                                    <h3>Prayer Times</h3>
-                                </div>
-                                <p id="locationSummary" class="section-support">Waiting for location</p>
-                            </div>
-
-                            <div id="prayerList" class="prayer-list"></div>
-                        </section>
-                    </section>
+    <main class="app-shell">
+        <section class="phone-screen">
+            <header class="app-header">
+                <button id="menuButton" class="menu-button" type="button" aria-label="Open settings" aria-expanded="false">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div class="app-title">
+                    <p class="eyebrow">Namaz Reminder</p>
+                    <h1>Prayer Times</h1>
                 </div>
-            </div>
+                <p id="todayLabel" class="header-date">Today</p>
+            </header>
+
+            <section class="hero-card main-hero-card">
+                <p class="card-label">Next Prayer</p>
+                <h2 id="nextPrayerName">Waiting</h2>
+                <p id="nextPrayerTime" class="hero-time">--:--</p>
+                <p id="countdownText" class="hero-subtext">Load prayer times to start.</p>
+            </section>
+
+            <section id="settingsPanel" class="menu-panel hidden-panel" aria-hidden="true">
+                <section class="panel settings-panel">
+                    <div class="section-heading">
+                        <div>
+                            <p class="card-label">Settings</p>
+                            <h3>Location & Reminders</h3>
+                        </div>
+                    </div>
+
+                    <div class="button-row">
+                        <button id="useLocationButton" class="primary-button">Use My Location</button>
+                        <button id="useSavedButton" class="secondary-button">Use Home</button>
+                    </div>
+
+                    <div class="toggle-row">
+                        <div>
+                            <p class="toggle-title">Browser reminders</p>
+                            <p class="toggle-copy">Works while this page stays open.</p>
+                        </div>
+                        <label class="switch">
+                            <input id="notificationsToggle" type="checkbox" />
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="button-row">
+                        <button id="saveHomeButton" class="secondary-button">Save as Home</button>
+                        <button id="loadTimesButton" class="primary-button">Refresh Times</button>
+                    </div>
+
+                    <p id="settingsLocationSummary" class="section-support">Using stored location</p>
+                    <p id="statusText" class="status-text">Ready.</p>
+                </section>
+            </section>
+
+            <section class="panel prayer-panel">
+                <div class="section-heading">
+                    <div>
+                        <p class="card-label">Today</p>
+                        <h3>Prayer Schedule</h3>
+                    </div>
+                    <p id="locationSummary" class="section-support">Waiting for location</p>
+                </div>
+
+                <div id="prayerList" class="prayer-list"></div>
+            </section>
         </section>
     </main>
 
