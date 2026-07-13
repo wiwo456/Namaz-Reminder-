@@ -220,7 +220,7 @@ function scheduleBrowserReminder() {
     }
 
     reminderTimeoutId = window.setTimeout(() => {
-        new Notification("Namaz Reminder", {
+        new Notification("My Namaz", {
             body: `${nextPrayer.name} time is now.`,
         });
         lastReminderPrayer = `${currentSchedule.readableDate}:${nextPrayer.name}`;
@@ -443,7 +443,7 @@ function bindPwaEvents() {
     window.addEventListener("appinstalled", () => {
         deferredInstallPrompt = null;
         updateInstallButtonVisibility();
-        setInstallStatus("Namaz Reminder is installed on this device.");
+        setInstallStatus("My Namaz is installed on this device.");
     });
 }
 

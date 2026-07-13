@@ -1,12 +1,13 @@
-const CACHE_NAME = "namaz-reminder-pwa-v4";
+const CACHE_NAME = "my-namaz-pwa-v5";
 const APP_ASSETS = [
     "./",
     "./index.html",
+    "./settings.html",
     "./styles.css",
     "./app.js",
     "./manifest.webmanifest",
-    "./icons/icon-192.svg",
-    "./icons/icon-512.svg",
+    "./icons/my-namaz-192.png",
+    "./icons/my-namaz-512.png",
 ];
 
 self.addEventListener("install", (event) => {
