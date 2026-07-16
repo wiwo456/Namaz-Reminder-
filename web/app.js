@@ -3,8 +3,12 @@ const ALADHAN_METHOD = "2";
 const DEFAULT_SETTINGS = {
     homeLatitude: 40.9364,
     homeLongitude: -74.1767,
+    homeLocationName: null,
+    homeLocationKey: null,
     currentLatitude: 40.9364,
     currentLongitude: -74.1767,
+    currentLocationName: null,
+    currentLocationKey: null,
     locationSource: "Home coordinates",
     notificationsEnabled: false,
 };
@@ -81,7 +85,7 @@ function setMenuOpen(isOpen) {
 }
 
 function setFormFromSettings() {
-    const locationText = `${appSettings.locationSource} • ${appSettings.currentLatitude.toFixed(4)}, ${appSettings.currentLongitude.toFixed(4)}`;
+    const locationText = getCurrentLocationLabel();
 
     if (elements.notificationsToggle) {
         elements.notificationsToggle.checked = appSettings.notificationsEnabled;
@@ -97,6 +101,107 @@ function setFormFromSettings() {
             month: "short",
             day: "numeric",
         });
+    }
+}
+
+function formatCoordinates(latitude, longitude) {
+    return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+}
+
+function getCoordinateKey(latitude, longitude) {
+    return `${latitude.toFixed(4)},${longitude.toFixed(4)}`;
+}
+
+function getCurrentLocationLabel() {
+    const key = getCoordinateKey(appSettings.currentLatitude, appSettings.currentLongitude);
+    if (appSettings.currentLocationName && appSettings.currentLocationKey === key) {
+        return appSettings.currentLocationName;
+    }
+
+    return formatCoordinates(appSettings.currentLatitude, appSettings.currentLongitude);
+}
+
+function buildPlaceName(address = {}) {
+    const primary = [
+        address.neighbourhood,
+        address.suburb,
+        address.borough,
+        address.city_district,
+        address.town,
+        address.village,
+        address.hamlet,
+        address.city,
+        address.county,
+        address.state,
+    ].find(Boolean);
+
+    if (!primary) {
+        return null;
+    }
+
+    if (address.country_code === "us" && address.state) {
+        const stateCode = address["ISO3166-2-lvl4"]?.split("-")[1];
+        if (stateCode && primary !== address.state && !primary.includes(stateCode)) {
+            return `${primary}, ${stateCode}`;
+        }
+    }
+
+    return primary;
+}
+
+async function reverseGeocode(latitude, longitude) {
+    const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+    url.searchParams.set("latitude", latitude);
+    url.searchParams.set("longitude", longitude);
+    url.searchParams.set("localityLanguage", "en");
+
+    const response = await fetch(url.toString(), {
+        headers: {
+            Accept: "application/json",
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+    }
+
+    const payload = await response.json();
+    return [
+        payload.locality,
+        payload.city,
+        payload.principalSubdivision,
+        payload.countryName,
+    ].find(Boolean) || null;
+}
+
+async function resolveCurrentLocationName() {
+    const latitude = appSettings.currentLatitude;
+    const longitude = appSettings.currentLongitude;
+    const key = getCoordinateKey(latitude, longitude);
+
+    if (appSettings.currentLocationName && appSettings.currentLocationKey === key) {
+        return;
+    }
+
+    try {
+        const placeName = await reverseGeocode(latitude, longitude);
+        if (!placeName) {
+            return;
+        }
+
+        appSettings.currentLocationName = placeName;
+        appSettings.currentLocationKey = key;
+
+        const homeKey = getCoordinateKey(appSettings.homeLatitude, appSettings.homeLongitude);
+        if (homeKey === key) {
+            appSettings.homeLocationName = placeName;
+            appSettings.homeLocationKey = key;
+        }
+
+        saveSettings();
+        setFormFromSettings();
+    } catch {
+        // Keep coordinates as the fallback label when reverse geocoding fails.
     }
 }
 
@@ -313,15 +418,23 @@ async function loadPrayerTimes() {
 function applyHomeCoordinates() {
     appSettings.currentLatitude = appSettings.homeLatitude;
     appSettings.currentLongitude = appSettings.homeLongitude;
+    appSettings.currentLocationName = appSettings.homeLocationName;
+    appSettings.currentLocationKey = appSettings.homeLocationKey;
     appSettings.locationSource = "Home coordinates";
     saveSettings();
     setFormFromSettings();
     setStatus("Home coordinates loaded.");
+    void resolveCurrentLocationName();
 }
 
 function saveCurrentAsHome() {
     appSettings.homeLatitude = appSettings.currentLatitude;
     appSettings.homeLongitude = appSettings.currentLongitude;
+    appSettings.homeLocationName = appSettings.currentLocationName;
+    appSettings.homeLocationKey = getCoordinateKey(
+        appSettings.currentLatitude,
+        appSettings.currentLongitude
+    );
     appSettings.locationSource = "Home coordinates";
     saveSettings();
     setFormFromSettings();
@@ -340,10 +453,13 @@ function requestDeviceLocation() {
         (position) => {
             appSettings.currentLatitude = position.coords.latitude;
             appSettings.currentLongitude = position.coords.longitude;
+            appSettings.currentLocationName = null;
+            appSettings.currentLocationKey = null;
             appSettings.locationSource = "Device location";
             saveSettings();
             setFormFromSettings();
             setStatus("Device location received. Refresh times to update.");
+            void resolveCurrentLocationName();
         },
         () => {
             setStatus("Location permission was denied or unavailable.");
@@ -458,7 +574,7 @@ async function registerServiceWorker() {
     }
 
     try {
-        await navigator.serviceWorker.register("./sw.js?v=4");
+        await navigator.serviceWorker.register("./sw.js?v=5");
         setInstallStatus(
             isIosBrowser()
                 ? "Open in Safari and use Add to Home Screen."
@@ -474,6 +590,7 @@ async function initialize() {
     bindPwaEvents();
     setFormFromSettings();
     updateInstallButtonVisibility();
+    void resolveCurrentLocationName();
     await registerServiceWorker();
     await loadPrayerTimes();
 }
