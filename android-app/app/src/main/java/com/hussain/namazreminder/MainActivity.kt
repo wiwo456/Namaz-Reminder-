@@ -2,10 +2,12 @@ package com.hussain.namazreminder
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.LinearLayout
@@ -81,7 +83,9 @@ class MainActivity : AppCompatActivity() {
     private val notificationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
-        if (!granted) {
+        if (granted) {
+            scheduleNotificationsIfPossible()
+        } else {
             notificationsSwitch.isChecked = false
             appSettings = appSettings.copy(notificationsEnabled = false)
             settingsRepository.save(appSettings)
@@ -187,6 +191,9 @@ class MainActivity : AppCompatActivity() {
             settingsRepository.save(appSettings)
             if (isChecked) {
                 requestNotificationPermissionIfNeeded()
+                scheduleNotificationsIfPossible()
+            } else {
+                prayerAlarmScheduler.cancelAll()
             }
         }
     }
@@ -265,7 +272,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (appSettings.notificationsEnabled) {
                     requestNotificationPermissionIfNeeded()
-                    prayerAlarmScheduler.scheduleToday(schedule)
+                    scheduleNotificationsIfPossible(schedule)
                 }
 
                 setStatus(getString(R.string.loaded_schedule_status, schedule.readableDate))
@@ -393,6 +400,40 @@ class MainActivity : AppCompatActivity() {
 
     private fun setStatus(message: String) {
         statusText.text = message
+    }
+
+    private fun scheduleNotificationsIfPossible(schedule: PrayerSchedule? = currentSchedule) {
+        if (!appSettings.notificationsEnabled) {
+            prayerAlarmScheduler.cancelAll()
+            return
+        }
+
+        if (!hasNotificationPermission()) {
+            return
+        }
+
+        if (!prayerAlarmScheduler.canScheduleExactAlarms()) {
+            setStatus(getString(R.string.exact_alarm_permission_required))
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+            }
+            return
+        }
+
+        if (schedule == null) {
+            return
+        }
+
+        prayerAlarmScheduler.scheduleDailyReminders(appSettings, schedule)
+        setStatus(getString(R.string.notifications_scheduled))
+    }
+
+    private fun hasNotificationPermission(): Boolean {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
     }
 
     private data class MethodOption(val value: String, val label: String)
