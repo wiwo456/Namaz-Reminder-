@@ -1,6 +1,7 @@
 const STORAGE_KEY = "namaz-reminder-web-settings";
 const ALADHAN_METHOD = "2";
 const WEATHER_REFRESH_MS = 10 * 60 * 1000;
+const MASJID_API_BASE_URL = "http://127.0.0.1:8010";
 const DEFAULT_SETTINGS = {
     homeLatitude: 40.9364,
     homeLongitude: -74.1767,
@@ -30,6 +31,9 @@ const elements = {
     weatherTemp: document.getElementById("weatherTemp"),
     weatherStatus: document.getElementById("weatherStatus"),
     weatherMeta: document.getElementById("weatherMeta"),
+    masjidSummary: document.getElementById("masjidSummary"),
+    masjidLocationCard: document.getElementById("masjidLocationCard"),
+    masjidStatus: document.getElementById("masjidStatus"),
     notificationsToggle: document.getElementById("notificationsToggle"),
     useLocationButton: document.getElementById("useLocationButton"),
     useSavedButton: document.getElementById("useSavedButton"),
@@ -49,6 +53,7 @@ let lastReminderPrayer = null;
 let deferredInstallPrompt = null;
 let menuOpen = false;
 let weatherRefreshTimer = null;
+let currentMasjidRequestKey = null;
 
 function isIosBrowser() {
     return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
@@ -380,6 +385,75 @@ function startWeatherRefresh() {
     }, WEATHER_REFRESH_MS);
 }
 
+function formatDistanceMeters(distanceMeters) {
+    if (distanceMeters >= 1000) {
+        return `${(distanceMeters / 1000).toFixed(1)} km away`;
+    }
+
+    return `${Math.round(distanceMeters)} m away`;
+}
+
+function setMasjidState(summaryText, bodyHtml) {
+    if (elements.masjidSummary) {
+        elements.masjidSummary.textContent = summaryText;
+    }
+
+    if (elements.masjidLocationCard) {
+        elements.masjidLocationCard.innerHTML = bodyHtml;
+    }
+}
+
+function renderMasjidResult(masjid) {
+    const summaryText = masjid.address || formatDistanceMeters(masjid.distance_meters);
+    setMasjidState(
+        summaryText,
+        `
+            <p class="masjid-eyebrow">Nearest masjid</p>
+            <h4 class="masjid-name">${masjid.name}</h4>
+            <p class="masjid-meta">${formatDistanceMeters(masjid.distance_meters)}</p>
+            <p class="masjid-address">${masjid.address || "Address unavailable"}</p>
+            <a class="masjid-link" href="${masjid.google_maps_url}" target="_blank" rel="noreferrer">Open in Google Maps</a>
+        `
+    );
+}
+
+async function loadNearestMasjid() {
+    const latitude = appSettings.currentLatitude;
+    const longitude = appSettings.currentLongitude;
+    const requestKey = getCoordinateKey(latitude, longitude);
+    currentMasjidRequestKey = requestKey;
+
+    setMasjidState("Searching nearby", '<p class="masjid-status">Looking for the nearest masjid...</p>');
+
+    try {
+        const url = new URL("/api/nearest-masjid", MASJID_API_BASE_URL);
+        url.searchParams.set("lat", latitude);
+        url.searchParams.set("lon", longitude);
+
+        const response = await fetch(url.toString());
+        const payload = await response.json();
+
+        if (currentMasjidRequestKey !== requestKey) {
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(payload.error || `HTTP ${response.status}`);
+        }
+
+        renderMasjidResult(payload.data);
+    } catch (error) {
+        if (currentMasjidRequestKey !== requestKey) {
+            return;
+        }
+
+        setMasjidState(
+            "Masjid search unavailable",
+            `<p class="masjid-status">Could not load masjid locations: ${error.message}</p>`
+        );
+    }
+}
+
 function updateInstallButtonVisibility() {
     if (elements.installButton) {
         elements.installButton.classList.toggle("hidden-panel", !deferredInstallPrompt);
@@ -579,6 +653,7 @@ async function loadPrayerTimes() {
         setFormFromSettings();
         startCountdownTimer();
         void loadWeather();
+        void loadNearestMasjid();
 
         const notificationsReady = await enableNotificationsIfNeeded();
         if (notificationsReady) {
@@ -602,6 +677,7 @@ function applyHomeCoordinates() {
     setStatus("Home coordinates loaded.");
     void resolveCurrentLocationName();
     void loadWeather();
+    void loadNearestMasjid();
 }
 
 function saveCurrentAsHome() {
@@ -638,6 +714,7 @@ function requestDeviceLocation() {
             setStatus("Device location received. Refresh times to update.");
             void resolveCurrentLocationName();
             void loadWeather();
+            void loadNearestMasjid();
         },
         () => {
             setStatus("Location permission was denied or unavailable.");
@@ -752,7 +829,7 @@ async function registerServiceWorker() {
     }
 
     try {
-        await navigator.serviceWorker.register("./sw.js?v=5");
+        await navigator.serviceWorker.register("./sw.js?v=6");
         setInstallStatus(
             isIosBrowser()
                 ? "Open in Safari and use Add to Home Screen."
@@ -770,6 +847,7 @@ async function initialize() {
     updateInstallButtonVisibility();
     void resolveCurrentLocationName();
     startWeatherRefresh();
+    void loadNearestMasjid();
     await registerServiceWorker();
     await loadPrayerTimes();
 }

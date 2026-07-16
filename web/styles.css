@@ -521,6 +521,56 @@ button {
     font-weight: 700;
 }
 
+.masjid-card {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(246, 241, 231, 0.96) 0%, rgba(255, 255, 255, 0.92) 100%);
+    border: 1px solid rgba(217, 207, 187, 0.92);
+}
+
+.masjid-status,
+.masjid-address,
+.masjid-meta {
+    margin-bottom: 0;
+    color: var(--muted);
+}
+
+.masjid-eyebrow {
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+.masjid-name {
+    margin-bottom: 8px;
+    font-size: 1.15rem;
+}
+
+.masjid-meta {
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+
+.masjid-address {
+    line-height: 1.5;
+}
+
+.masjid-link {
+    display: inline-flex;
+    margin-top: 14px;
+    color: var(--accent-strong);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.masjid-link:hover {
+    text-decoration: underline;
+}
+
 .button-row {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
