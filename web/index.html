@@ -32,11 +32,31 @@
             </header>
 
             <section class="view-screen">
-                <section class="hero-card main-hero-card">
-                    <p class="card-label">Next Prayer</p>
-                    <h2 id="nextPrayerName">Waiting</h2>
-                    <p id="nextPrayerTime" class="hero-time">--:--</p>
-                    <p id="countdownText" class="hero-subtext">Load prayer times to start.</p>
+                <section id="heroCard" class="hero-card main-hero-card" data-weather-theme="clear-day">
+                    <div class="weather-scene" aria-hidden="true">
+                        <div class="weather-sky-glow"></div>
+                        <div class="weather-sun"></div>
+                        <div class="weather-moon"></div>
+                        <div class="weather-cloud weather-cloud-one"></div>
+                        <div class="weather-cloud weather-cloud-two"></div>
+                        <div class="weather-rain"></div>
+                        <div class="weather-snow"></div>
+                    </div>
+                    <div class="hero-content">
+                        <div class="hero-weather-row">
+                            <div>
+                                <p class="card-label">Next Prayer</p>
+                                <h2 id="nextPrayerName">Waiting</h2>
+                            </div>
+                            <div class="weather-chip">
+                                <p id="weatherTemp" class="weather-temp">--</p>
+                                <p id="weatherStatus" class="weather-status">Loading weather</p>
+                            </div>
+                        </div>
+                        <p id="nextPrayerTime" class="hero-time">--:--</p>
+                        <p id="countdownText" class="hero-subtext">Load prayer times to start.</p>
+                        <p id="weatherMeta" class="hero-weather-meta">Looking outside...</p>
+                    </div>
                 </section>
 
                 <section class="panel prayer-panel">
@@ -54,6 +74,6 @@
         </section>
     </main>
 
-    <script src="app.js?v=2"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>

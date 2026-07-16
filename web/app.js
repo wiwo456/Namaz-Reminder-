@@ -1,5 +1,6 @@
 const STORAGE_KEY = "namaz-reminder-web-settings";
 const ALADHAN_METHOD = "2";
+const WEATHER_REFRESH_MS = 10 * 60 * 1000;
 const DEFAULT_SETTINGS = {
     homeLatitude: 40.9364,
     homeLongitude: -74.1767,
@@ -22,9 +23,13 @@ const elements = {
     backButton: document.getElementById("backButton"),
     installButton: document.getElementById("installButton"),
     installStatus: document.getElementById("installStatus"),
+    heroCard: document.getElementById("heroCard"),
     nextPrayerName: document.getElementById("nextPrayerName"),
     nextPrayerTime: document.getElementById("nextPrayerTime"),
     countdownText: document.getElementById("countdownText"),
+    weatherTemp: document.getElementById("weatherTemp"),
+    weatherStatus: document.getElementById("weatherStatus"),
+    weatherMeta: document.getElementById("weatherMeta"),
     notificationsToggle: document.getElementById("notificationsToggle"),
     useLocationButton: document.getElementById("useLocationButton"),
     useSavedButton: document.getElementById("useSavedButton"),
@@ -43,6 +48,7 @@ let reminderTimeoutId = null;
 let lastReminderPrayer = null;
 let deferredInstallPrompt = null;
 let menuOpen = false;
+let weatherRefreshTimer = null;
 
 function isIosBrowser() {
     return /iPhone|iPad|iPod/i.test(window.navigator.userAgent);
@@ -70,6 +76,21 @@ function setStatus(message) {
 function setInstallStatus(message) {
     if (elements.installStatus) {
         elements.installStatus.textContent = message;
+    }
+}
+
+function setWeatherDisplay(summary) {
+    if (elements.heroCard && summary.theme) {
+        elements.heroCard.dataset.weatherTheme = summary.theme;
+    }
+    if (elements.weatherTemp && summary.temperatureText) {
+        elements.weatherTemp.textContent = summary.temperatureText;
+    }
+    if (elements.weatherStatus && summary.statusText) {
+        elements.weatherStatus.textContent = summary.statusText;
+    }
+    if (elements.weatherMeta && summary.metaText) {
+        elements.weatherMeta.textContent = summary.metaText;
     }
 }
 
@@ -203,6 +224,160 @@ async function resolveCurrentLocationName() {
     } catch {
         // Keep coordinates as the fallback label when reverse geocoding fails.
     }
+}
+
+function prefersFahrenheit() {
+    return false;
+}
+
+function weatherDescriptionFromCode(code) {
+    const map = {
+        0: "Clear",
+        1: "Mostly clear",
+        2: "Partly cloudy",
+        3: "Overcast",
+        45: "Fog",
+        48: "Icy fog",
+        51: "Light drizzle",
+        53: "Drizzle",
+        55: "Heavy drizzle",
+        56: "Freezing drizzle",
+        57: "Heavy freezing drizzle",
+        61: "Light rain",
+        63: "Rain",
+        65: "Heavy rain",
+        66: "Freezing rain",
+        67: "Heavy freezing rain",
+        71: "Light snow",
+        73: "Snow",
+        75: "Heavy snow",
+        77: "Snow grains",
+        80: "Rain showers",
+        81: "Heavy showers",
+        82: "Violent rain",
+        85: "Snow showers",
+        86: "Heavy snow showers",
+        95: "Thunderstorm",
+        96: "Storm with hail",
+        99: "Severe storm",
+    };
+
+    return map[code] || "Weather";
+}
+
+function weatherThemeFromCurrent(current) {
+    const { weather_code: code, is_day: isDay } = current;
+
+    if ([95, 96, 99].includes(code)) {
+        return "storm";
+    }
+
+    if ([71, 73, 75, 77, 85, 86].includes(code) || (current.snowfall || 0) > 0) {
+        return isDay ? "snow-day" : "snow-night";
+    }
+
+    if (
+        [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code) ||
+        (current.rain || 0) > 0 ||
+        (current.showers || 0) > 0
+    ) {
+        return isDay ? "rain-day" : "rain-night";
+    }
+
+    if ([1, 2, 3, 45, 48].includes(code) || (current.cloud_cover || 0) > 45) {
+        return isDay ? "cloudy-day" : "cloudy-night";
+    }
+
+    return isDay ? "clear-day" : "clear-night";
+}
+
+function formatTemperature(value, unit) {
+    return `${Math.round(value)}°${unit}`;
+}
+
+function formatClock(dateString) {
+    return new Date(dateString).toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function buildWeatherMeta(current, daily) {
+    const parts = [current.is_day ? "Daytime outside" : "Night outside"];
+
+    if (daily?.sunrise?.[0] && daily?.sunset?.[0]) {
+        parts.push(`Sunrise ${formatClock(daily.sunrise[0])}`);
+        parts.push(`Sunset ${formatClock(daily.sunset[0])}`);
+    }
+
+    if ((current.wind_speed_10m || 0) >= 12) {
+        parts.push(`Wind ${Math.round(current.wind_speed_10m)} ${prefersFahrenheit() ? "mph" : "km/h"}`);
+    }
+
+    return parts.join(" • ");
+}
+
+function buildWeatherSummary(payload) {
+    const current = payload.current;
+    const unit = payload.current_units.temperature_2m === "°F" ? "F" : "C";
+    return {
+        theme: weatherThemeFromCurrent(current),
+        temperatureText: formatTemperature(current.temperature_2m, unit),
+        statusText: weatherDescriptionFromCode(current.weather_code),
+        metaText: buildWeatherMeta(current, payload.daily),
+    };
+}
+
+async function loadWeather() {
+    if (!elements.heroCard) {
+        return;
+    }
+
+    const latitude = appSettings.currentLatitude;
+    const longitude = appSettings.currentLongitude;
+    const tempUnit = prefersFahrenheit() ? "fahrenheit" : "celsius";
+    const windUnit = prefersFahrenheit() ? "mph" : "kmh";
+
+    try {
+        const url = new URL("https://api.open-meteo.com/v1/forecast");
+        url.searchParams.set("latitude", latitude);
+        url.searchParams.set("longitude", longitude);
+        url.searchParams.set(
+            "current",
+            "temperature_2m,weather_code,is_day,cloud_cover,rain,showers,snowfall,wind_speed_10m"
+        );
+        url.searchParams.set("daily", "sunrise,sunset");
+        url.searchParams.set("forecast_days", "1");
+        url.searchParams.set("timezone", "auto");
+        url.searchParams.set("temperature_unit", tempUnit);
+        url.searchParams.set("wind_speed_unit", windUnit);
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const payload = await response.json();
+        setWeatherDisplay(buildWeatherSummary(payload));
+    } catch {
+        setWeatherDisplay({
+            theme: elements.heroCard?.dataset.weatherTheme || "clear-day",
+            temperatureText: "--",
+            statusText: "Weather unavailable",
+            metaText: "Could not match the outside conditions right now.",
+        });
+    }
+}
+
+function startWeatherRefresh() {
+    if (weatherRefreshTimer) {
+        clearInterval(weatherRefreshTimer);
+    }
+
+    void loadWeather();
+    weatherRefreshTimer = window.setInterval(() => {
+        void loadWeather();
+    }, WEATHER_REFRESH_MS);
 }
 
 function updateInstallButtonVisibility() {
@@ -403,6 +578,7 @@ async function loadPrayerTimes() {
         currentSchedule = buildScheduleFromPayload(payload);
         setFormFromSettings();
         startCountdownTimer();
+        void loadWeather();
 
         const notificationsReady = await enableNotificationsIfNeeded();
         if (notificationsReady) {
@@ -425,6 +601,7 @@ function applyHomeCoordinates() {
     setFormFromSettings();
     setStatus("Home coordinates loaded.");
     void resolveCurrentLocationName();
+    void loadWeather();
 }
 
 function saveCurrentAsHome() {
@@ -460,6 +637,7 @@ function requestDeviceLocation() {
             setFormFromSettings();
             setStatus("Device location received. Refresh times to update.");
             void resolveCurrentLocationName();
+            void loadWeather();
         },
         () => {
             setStatus("Location permission was denied or unavailable.");
@@ -591,6 +769,7 @@ async function initialize() {
     setFormFromSettings();
     updateInstallButtonVisibility();
     void resolveCurrentLocationName();
+    startWeatherRefresh();
     await registerServiceWorker();
     await loadPrayerTimes();
 }
