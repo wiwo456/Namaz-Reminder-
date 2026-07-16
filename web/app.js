@@ -1,7 +1,6 @@
 const STORAGE_KEY = "namaz-reminder-web-settings";
 const ALADHAN_METHOD = "2";
 const WEATHER_REFRESH_MS = 10 * 60 * 1000;
-const MASJID_API_BASE_URL = "http://127.0.0.1:8010";
 const DEFAULT_SETTINGS = {
     homeLatitude: 40.9364,
     homeLongitude: -74.1767,
@@ -417,6 +416,15 @@ function renderMasjidResult(masjid) {
     );
 }
 
+function getMasjidApiUrl(latitude, longitude) {
+    const isLocalHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+    const baseUrl = isLocalHost ? "http://127.0.0.1:8010" : window.location.origin;
+    const url = new URL("/api/nearest-masjid", baseUrl);
+    url.searchParams.set("lat", latitude);
+    url.searchParams.set("lon", longitude);
+    return url;
+}
+
 async function loadNearestMasjid() {
     const latitude = appSettings.currentLatitude;
     const longitude = appSettings.currentLongitude;
@@ -426,11 +434,7 @@ async function loadNearestMasjid() {
     setMasjidState("Searching nearby", '<p class="masjid-status">Looking for the nearest masjid...</p>');
 
     try {
-        const url = new URL("/api/nearest-masjid", MASJID_API_BASE_URL);
-        url.searchParams.set("lat", latitude);
-        url.searchParams.set("lon", longitude);
-
-        const response = await fetch(url.toString());
+        const response = await fetch(getMasjidApiUrl(latitude, longitude).toString());
         const payload = await response.json();
 
         if (currentMasjidRequestKey !== requestKey) {
@@ -829,7 +833,7 @@ async function registerServiceWorker() {
     }
 
     try {
-        await navigator.serviceWorker.register("./sw.js?v=6");
+        await navigator.serviceWorker.register("./sw.js?v=7");
         setInstallStatus(
             isIosBrowser()
                 ? "Open in Safari and use Add to Home Screen."

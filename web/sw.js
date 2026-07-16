@@ -1,10 +1,10 @@
-const CACHE_NAME = "my-namaz-pwa-v10";
+const CACHE_NAME = "my-namaz-pwa-v11";
 const APP_ASSETS = [
     "./",
     "./index.html",
     "./settings.html",
     "./styles.css",
-    "./app.js?v=4",
+    "./app.js?v=5",
     "./manifest.webmanifest",
     "./icons/my-namaz-192.png",
     "./icons/my-namaz-512.png",
